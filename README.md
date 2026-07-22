@@ -94,13 +94,13 @@ can edit the dashboard pages from Windows/Mac/Linux:
 
 ```
 # Windows Explorer address bar:
-\\cyberdeck-pi4.local\webfiles
+\\192.168.1.175\webfiles
 
 # macOS Finder → Go → Connect to Server:
-smb://cyberdeck-pi4.local/webfiles
+smb://192.168.1.175.local/webfiles
 
 # Linux:
-smbclient //cyberdeck-pi4.local/webfiles -U pi
+smbclient //192.168.1.175.local/webfiles -U pi
 ```
 
 ---
