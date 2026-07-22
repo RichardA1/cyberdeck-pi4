@@ -41,6 +41,10 @@ ssh pi@cyberdeck-pi4.local
 # 2. Install git (not included in Trixie Lite by default)
 sudo apt-get update && sudo apt-get install -y git
 
+# 3. The WiFi radio is rf-killed — the country code needs to be set before the radio will transmit. Run these:
+sudo rfkill unblock wifi
+sudo raspi-config nonint do_wifi_country US
+
 # 3. Clone the repo
 git clone https://github.com/RichardA1/cyberdeck-pi4.git
 cd cyberdeck-pi4
