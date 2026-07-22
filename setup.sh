@@ -109,8 +109,8 @@ cp "$REPO_DIR/config/mosquitto.conf" /etc/mosquitto/conf.d/cyberdeck.conf
 systemctl restart mosquitto
 sleep 3
 check "mosquitto active" "systemctl is-active --quiet mosquitto"
-check "No duplicate persistence_location" \
-  "[ \$(grep -r 'persistence_location' /etc/mosquitto/ 2>/dev/null | wc -l) -le 1 ]"
+check "cyberdeck.conf has no persistence_location" \
+  "! grep -q 'persistence_location' /etc/mosquitto/conf.d/cyberdeck.conf"
 check "WebSocket port 9001" "ss -ltn | grep -q ':9001 '"
 
 # -------------------------------------------------------
