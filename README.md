@@ -38,17 +38,20 @@ internet uplink required or expected. Connected clients get DHCP, DNS
 # 1. SSH into the Pi (on your home WiFi initially, or via Ethernet)
 ssh pi@cyberdeck-pi4.local
 
-# 2. Clone the repo
-git clone https://github.com/YOUR_USER/cyberdeck-pi4.git
+# 2. Install git (not included in Trixie Lite by default)
+sudo apt-get update && sudo apt-get install -y git
+
+# 3. Clone the repo
+git clone https://github.com/RichardA1/cyberdeck-pi4.git
 cd cyberdeck-pi4
 
-# 3. Run the installer
+# 4. Run the installer
 sudo bash setup.sh
 
-# 4. Reboot
+# 5. Reboot
 sudo reboot
 
-# 5. Connect to the CyberDeck WiFi, open http://192.168.4.1
+# 6. Connect to the CyberDeck WiFi, open http://192.168.4.1
 ```
 
 After reboot, the Pi broadcasts the **CyberDeck** SSID. Connect from any
@@ -192,11 +195,17 @@ sudo systemctl disable hostapd dnsmasq 2>/dev/null
 
 ---
 
-## Stage 2: Clone the Repo
+## Stage 2: Install Git & Clone the Repo
+
+Git is not included in Trixie Lite by default — install it first:
+
+```bash
+sudo apt-get install -y git
+```
 
 ```bash
 cd ~
-git clone https://github.com/YOUR_USER/cyberdeck-pi4.git
+git clone https://github.com/RichardA1/cyberdeck-pi4.git
 cd cyberdeck-pi4
 ```
 
@@ -225,19 +234,20 @@ fi
 
 **Expected on Trixie:** `NetworkManager detected`
 
-### Unblock WiFi (if rf-killed)
+### Unblock WiFi and set country code (required)
+
+The WiFi radio is rf-killed on a fresh headless install until a country
+code is set. **Both commands are required** even if you set the country in
+Raspberry Pi Imager — the headless boot may not have applied it:
 
 ```bash
+sudo raspi-config nonint do_wifi_country US
 sudo rfkill unblock wifi
 rfkill list wifi
 # Expected: "Soft blocked: no" and "Hard blocked: no"
 ```
 
-### Set WiFi country (if not done in Imager)
-
-```bash
-sudo raspi-config nonint do_wifi_country US
-```
+Replace `US` with your country's ISO 3166-1 alpha-2 code if needed.
 
 ### Install NetworkManager unmanaged config
 
@@ -523,12 +533,24 @@ systemctl is-active nmbd
 # Expected: active
 ```
 
-### Verify: Share is visible
+### Verify: Share is configured
 
 ```bash
-smbclient -L 192.168.4.1 -U pi -N 2>/dev/null | grep webfiles
-# Expected: webfiles   Disk   CyberDeck web files
+testparm -s 2>/dev/null | grep -A2 "\[webfiles\]"
+# Expected:
+#   [webfiles]
+#       comment = CyberDeck web files
+#       path = /var/www/html
 ```
+
+**From another device on the same network** (Windows, Mac, or Linux):
+
+```
+Windows Explorer:  \\cyberdeck-pi4.local\webfiles
+macOS Finder:      smb://cyberdeck-pi4.local/webfiles
+```
+
+Enter username `pi` and the Samba password you set.
 
 ### Verify: Write-through works (SMB write → Nginx serves)
 
@@ -738,7 +760,7 @@ sudo smbpasswd pi
 # Enter new SMB password twice
 ```
 
-**Verify:** `smbclient -L 192.168.4.1 -U pi` with the new password.
+**Verify:** From another device, connect to `\\cyberdeck-pi4.local\webfiles` with the new password.
 
 ## Hostname
 
