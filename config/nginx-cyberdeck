@@ -1,0 +1,57 @@
+# CyberDeck — Nginx configuration
+# Static web server + captive portal redirects + MQTT WebSocket proxy
+
+server {
+    listen 80 default_server;
+    server_name _;
+
+    root /var/www/html;
+    index index.html;
+
+    # --- Captive portal connectivity-check redirects ---
+    # Android
+    location /generate_204  { return 302 http://192.168.4.1/; }
+    location /gen_204       { return 302 http://192.168.4.1/; }
+    location /connectivitycheck { return 302 http://192.168.4.1/; }
+
+    # Apple
+    location /hotspot-detect.html       { return 302 http://192.168.4.1/; }
+    location /library/test/success.html { return 302 http://192.168.4.1/; }
+
+    # Windows
+    location /connecttest.txt { return 302 http://192.168.4.1/; }
+    location /ncsi.txt        { return 302 http://192.168.4.1/; }
+    location /redirect        { return 302 http://192.168.4.1/; }
+
+    # Firefox
+    location /canonical.html { return 302 http://192.168.4.1/; }
+    location /success.txt    { return 302 http://192.168.4.1/; }
+
+    # Samsung
+    location /check_network { return 302 http://192.168.4.1/; }
+
+    # --- WebSocket proxy for MQTT ---
+    location /mqtt {
+        proxy_pass http://127.0.0.1:9001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_read_timeout 86400;
+    }
+
+    # --- Shutdown API proxy ---
+    location /api/shutdown {
+        proxy_pass http://127.0.0.1:8080/shutdown;
+        proxy_method POST;
+    }
+
+    location /api/ping {
+        proxy_pass http://127.0.0.1:8080/ping;
+    }
+
+    # --- Static files ---
+    location / {
+        try_files $uri $uri/ =404;
+    }
+}

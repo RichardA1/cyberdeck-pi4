@@ -1,0 +1,43 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create archive
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/}"
+          tar -czf "cyberdeck-pi4-${VERSION}.tar.gz" \
+            --exclude='.git' \
+            --exclude='*.tar.gz' \
+            .
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: cyberdeck-pi4-*.tar.gz
+          body: |
+            ## Install
+
+            ```bash
+            # Download and extract
+            tar -xzf cyberdeck-pi4-${{ github.ref_name }}.tar.gz -C ~/cyberdeck-pi4
+
+            # Run setup
+            cd ~/cyberdeck-pi4
+            sudo bash setup.sh
+            sudo reboot
+            ```
+
+            See [README.md](README.md) for detailed instructions.
+          generate_release_notes: true

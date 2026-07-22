@@ -1,0 +1,105 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  shellcheck:
+    name: ShellCheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ShellCheck
+        run: sudo apt-get install -y shellcheck
+      - name: Lint shell scripts
+        run: |
+          shellcheck setup.sh
+          shellcheck scripts/*.sh
+          shellcheck config/iptables-captive.sh
+
+  html-validate:
+    name: HTML Validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install html5validator
+        run: pip install html5validator
+      - name: Validate HTML
+        run: html5validator --root web/ --also-check-css
+
+  nginx-validate:
+    name: Nginx Config Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install nginx
+        run: sudo apt-get install -y nginx-light
+      - name: Test config
+        run: |
+          sudo mkdir -p /var/www/html
+          sudo cp -r web/* /var/www/html/
+          sudo rm -f /etc/nginx/sites-enabled/default
+          sudo cp config/nginx-cyberdeck /etc/nginx/sites-available/cyberdeck
+          sudo ln -sf /etc/nginx/sites-available/cyberdeck /etc/nginx/sites-enabled/cyberdeck
+          sudo nginx -t
+
+  mosquitto-validate:
+    name: Mosquitto Config Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Mosquitto
+        run: sudo apt-get install -y mosquitto
+      - name: Test config starts and stays up
+        run: |
+          sudo cp config/mosquitto.conf /etc/mosquitto/conf.d/cyberdeck.conf
+          sudo systemctl restart mosquitto
+          sleep 5
+          systemctl is-active mosquitto
+
+  smoke-test:
+    name: Integration Smoke Test
+    runs-on: ubuntu-latest
+    needs: [nginx-validate, mosquitto-validate]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install services
+        run: |
+          sudo apt-get install -y nginx-light mosquitto mosquitto-clients
+          sudo mkdir -p /var/www/html
+          sudo cp -r web/* /var/www/html/
+
+          # Nginx
+          sudo rm -f /etc/nginx/sites-enabled/default
+          sudo cp config/nginx-cyberdeck /etc/nginx/sites-available/cyberdeck
+          sudo ln -sf /etc/nginx/sites-available/cyberdeck /etc/nginx/sites-enabled/cyberdeck
+          sudo systemctl restart nginx
+
+          # Mosquitto
+          sudo cp config/mosquitto.conf /etc/mosquitto/conf.d/cyberdeck.conf
+          sudo systemctl restart mosquitto
+          sleep 3
+
+      - name: Web pages return 200
+        run: |
+          curl -sf http://localhost/ > /dev/null
+          curl -sf http://localhost/devices.html > /dev/null
+          curl -sf http://localhost/mqtt.html > /dev/null
+
+      - name: Captive portal returns 302
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/generate_204)
+          [ "$STATUS" = "302" ] || (echo "Expected 302, got $STATUS" && exit 1)
+
+      - name: MQTT pub/sub works
+        run: |
+          timeout 5 mosquitto_sub -h localhost -t "ci/test" -C 1 &
+          sleep 1
+          mosquitto_pub -h localhost -t "ci/test" -m "smoke-ok"
+          wait
+
+      - name: WebSocket port 9001 listening
+        run: ss -ltn | grep -q ':9001 '

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CyberDeck — Connected Devices</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="tab-rail">
+  <a class="tab" href="/">Home</a>
+  <div class="tab-divider"></div>
+  <a class="tab active" href="/devices.html">Devices</a>
+  <div class="tab-divider"></div>
+  <a class="tab" href="/mqtt.html">MQTT</a>
+</nav>
+
+<header class="header">
+  <div class="header-left">
+    <div class="status-dot pulse-dot"></div>
+    <span class="status-text">ONLINE</span>
+  </div>
+  <div class="header-right">
+    <span class="mode-badge">🔒 ISOLATED</span>
+    <span class="project-title">CYBERDECK</span>
+  </div>
+</header>
+
+<main class="page-content">
+  <div class="page-title">Connected Devices</div>
+  <div class="page-subtitle">WiFi clients from DHCP leases · MQTT devices seen since page load</div>
+
+  <div class="card">
+    <div class="card-header" id="clients-header">WiFi Clients (loading...)</div>
+    <table class="data-table">
+      <thead><tr><th>Hostname</th><th>IP Address</th><th>MAC</th><th>Lease Remaining</th></tr></thead>
+      <tbody id="clients-body">
+        <tr><td colspan="4" style="color:var(--text-secondary); font-style:italic">Loading...</td></tr>
+      </tbody>
+    </table>
+    <div class="subtle-note">Auto-refreshes every 10 seconds from DHCP lease data.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">MQTT Activity <span class="badge badge-cyan" id="mqtt-status-badge" style="margin-left:8px">Connecting...</span></div>
+    <div id="mqtt-activity">
+      <div style="color:var(--text-secondary); font-style:italic; font-size:11px; padding:8px">
+        Connecting to broker to discover active topics...
+      </div>
+    </div>
+    <div class="subtle-note">Live — subscribes to <span style="color:var(--accent-cyan)">#</span> and groups by topic root. Only shows devices that have published since you opened the page.</div>
+  </div>
+</main>
+
+<script src="js/paho-mqtt-min.js"></script>
+<script>
+// --- WiFi Clients (from clients.json) ---
+function loadClients() {
+  fetch('/clients.json?t=' + Date.now())
+    .then(function(r) { return r.json(); })
+    .then(function(clients) {
+      var header = document.getElementById('clients-header');
+      var tbody = document.getElementById('clients-body');
+      header.textContent = 'WiFi Clients (' + clients.length + ')';
+      if (clients.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="color:var(--text-secondary); font-style:italic">No clients connected</td></tr>';
+        return;
+      }
+      tbody.innerHTML = '';
+      clients.forEach(function(c) {
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td class="host">' + (c.hostname || '*') + '</td>' +
+          '<td class="ip">' + c.ip + '</td>' +
+          '<td>' + c.mac + '</td>' +
+          '<td>' + c.lease_remaining + '</td>';
+        tbody.appendChild(tr);
+      });
+    })
+    .catch(function() {
+      document.getElementById('clients-body').innerHTML =
+        '<tr><td colspan="4" style="color:var(--accent-red)">Failed to load client data</td></tr>';
+    });
+}
+
+loadClients();
+setInterval(loadClients, 10000);
+
+// --- MQTT Activity (live, client-side) ---
+var topics = {}; // { "sensors/temp": { payload: "22.4", time: Date } }
+
+var host = window.location.hostname || '192.168.4.1';
+var client = new Paho.Client(host, 9001, '/mqtt', 'devices-' + Math.random().toString(16).substr(2, 8));
+
+client.onConnectionLost = function(resp) {
+  document.getElementById('mqtt-status-badge').textContent = 'Disconnected';
+  document.getElementById('mqtt-status-badge').className = 'badge badge-red';
+  setTimeout(mqttConnect, 3000);
+};
+
+client.onMessageArrived = function(msg) {
+  topics[msg.destinationName] = {
+    payload: msg.payloadString.substring(0, 60),
+    time: new Date()
+  };
+  renderActivity();
+};
+
+function mqttConnect() {
+  client.connect({
+    onSuccess: function() {
+      document.getElementById('mqtt-status-badge').textContent = 'Connected';
+      document.getElementById('mqtt-status-badge').className = 'badge badge-green';
+      client.subscribe('#');
+    },
+    onFailure: function() {
+      document.getElementById('mqtt-status-badge').textContent = 'Failed';
+      document.getElementById('mqtt-status-badge').className = 'badge badge-red';
+      setTimeout(mqttConnect, 5000);
+    },
+    timeout: 5
+  });
+}
+
+function renderActivity() {
+  var el = document.getElementById('mqtt-activity');
+  var keys = Object.keys(topics).sort();
+  if (keys.length === 0) {
+    el.innerHTML = '<div style="color:var(--text-secondary); font-style:italic; font-size:11px; padding:8px">No messages received yet</div>';
+    return;
+  }
+  var html = '';
+  keys.forEach(function(topic) {
+    var d = topics[topic];
+    var ago = Math.round((Date.now() - d.time.getTime()) / 1000);
+    var agoStr = ago < 60 ? ago + 's ago' : Math.round(ago / 60) + 'm ago';
+    html += '<div class="activity-item">' +
+      '<span class="activity-topic">' + topic + '</span>' +
+      '<span class="activity-meta">' + d.payload + ' · ' + agoStr + '</span>' +
+      '</div>';
+  });
+  el.innerHTML = html;
+}
+
+// Refresh "ago" labels
+setInterval(renderActivity, 5000);
+
+mqttConnect();
+</script>
+</body>
+</html>

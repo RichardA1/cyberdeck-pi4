@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CyberDeck — Server Overview</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="tab-rail">
+  <a class="tab active" href="/">Home</a>
+  <div class="tab-divider"></div>
+  <a class="tab" href="/devices.html">Devices</a>
+  <div class="tab-divider"></div>
+  <a class="tab" href="/mqtt.html">MQTT</a>
+</nav>
+
+<header class="header">
+  <div class="header-left">
+    <div class="status-dot pulse-dot"></div>
+    <span class="status-text" id="header-status">LOADING</span>
+  </div>
+  <div class="header-right">
+    <span class="mode-badge">🔒 ISOLATED</span>
+    <span class="project-title">CYBERDECK</span>
+  </div>
+</header>
+
+<main class="page-content">
+  <div class="page-title">Server Overview</div>
+  <div class="page-subtitle" id="subtitle">Loading status...</div>
+
+  <div class="stat-row">
+    <div class="stat-tile"><div class="stat-value" id="s-clients">—</div><div class="stat-label">WiFi Clients</div></div>
+    <div class="stat-tile"><div class="stat-value" id="s-services">—</div><div class="stat-label">Services Up</div></div>
+    <div class="stat-tile"><div class="stat-value" id="s-temp">—</div><div class="stat-label">CPU Temp</div></div>
+    <div class="stat-tile"><div class="stat-value" id="s-uptime">—</div><div class="stat-label">Uptime</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">System Info</div>
+      <div class="info-row"><span class="info-key">Hostname</span><span class="info-val" id="i-hostname">—</span></div>
+      <div class="info-row"><span class="info-key">AP IP</span><span class="info-val">192.168.4.1</span></div>
+      <div class="info-row"><span class="info-key">Mode</span><span class="info-val">Isolated</span></div>
+      <div class="info-row"><span class="info-key">Uptime</span><span class="info-val" id="i-uptime">—</span></div>
+    </div>
+    <div class="card">
+      <div class="card-header">System Resources</div>
+      <div class="gauge-demo">
+        <div class="gauge-label"><span>CPU Temp</span><span id="g-temp-val">—</span></div>
+        <div class="gauge-bar"><div class="gauge-fill" id="g-temp" style="width:0%"></div></div>
+      </div>
+      <div class="gauge-demo">
+        <div class="gauge-label"><span>CPU Load</span><span id="g-load-val">—</span></div>
+        <div class="gauge-bar"><div class="gauge-fill" id="g-load" style="width:0%"></div></div>
+      </div>
+      <div class="gauge-demo">
+        <div class="gauge-label"><span>Memory</span><span id="g-mem-val">—</span></div>
+        <div class="gauge-bar"><div class="gauge-fill" id="g-mem" style="width:0%"></div></div>
+      </div>
+      <div class="gauge-demo">
+        <div class="gauge-label"><span>Disk (SD)</span><span id="g-disk-val">—</span></div>
+        <div class="gauge-bar"><div class="gauge-fill" id="g-disk" style="width:0%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">Service Health</div>
+    <div class="service-grid" id="service-grid">
+      <!-- Populated by JS -->
+    </div>
+  </div>
+
+  <div class="card shutdown-section">
+    <div class="card-header">System Control</div>
+    <button class="btn-shutdown" id="shutdown-btn" onclick="showShutdownConfirm()">⏻ Shutdown Server</button>
+    <div class="shutdown-confirm" id="shutdown-confirm">
+      <div style="color:var(--accent-red); margin-bottom:8px;">
+        This will power off the CyberDeck. You will lose WiFi and all services.
+        You must physically access the Pi to turn it back on.
+      </div>
+      <button class="btn btn-danger" onclick="doShutdown()">Confirm Shutdown</button>
+      <button class="btn" onclick="hideShutdownConfirm()" style="margin-left:8px;">Cancel</button>
+    </div>
+  </div>
+</main>
+
+<script src="js/status.js"></script>
+</body>
+</html>

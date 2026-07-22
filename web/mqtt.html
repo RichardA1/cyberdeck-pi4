@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CyberDeck — MQTT Dashboard</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="tab-rail">
+  <a class="tab" href="/">Home</a>
+  <div class="tab-divider"></div>
+  <a class="tab" href="/devices.html">Devices</a>
+  <div class="tab-divider"></div>
+  <a class="tab active" href="/mqtt.html">MQTT</a>
+</nav>
+
+<header class="header">
+  <div class="header-left">
+    <div class="status-dot pulse-dot"></div>
+    <span class="status-text">MQTT</span>
+  </div>
+  <div class="header-right">
+    <span class="mode-badge">🔒 ISOLATED</span>
+    <span class="project-title">CYBERDECK</span>
+  </div>
+</header>
+
+<main class="page-content">
+  <div class="page-title">MQTT Dashboard</div>
+  <div class="page-subtitle">Connect · Subscribe · Publish · Monitor</div>
+
+  <!-- Connection -->
+  <div class="card">
+    <div class="card-header">Broker Connection <span class="badge badge-cyan" id="conn-badge" style="margin-left:8px">Disconnected</span></div>
+    <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
+      <button class="btn btn-success" id="btn-connect" onclick="mqttConnect()">Connect</button>
+      <button class="btn btn-danger" id="btn-disconnect" onclick="mqttDisconnect()" disabled>Disconnect</button>
+      <span style="font-size:10px;color:var(--text-secondary);margin-left:8px" id="conn-info"></span>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <!-- Subscribe -->
+    <div class="card">
+      <div class="card-header">Subscribe</div>
+      <div class="form-group">
+        <label>Topic</label>
+        <input type="text" id="sub-topic" placeholder="sensors/# or wled/+/status" value="#">
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-sm" onclick="doSubscribe()">Subscribe</button>
+        <button class="btn btn-sm btn-danger" onclick="doUnsubscribe()">Unsubscribe</button>
+      </div>
+      <div id="sub-list" style="margin-top:8px;font-size:10px;color:var(--text-secondary)"></div>
+    </div>
+
+    <!-- Publish -->
+    <div class="card">
+      <div class="card-header">Publish</div>
+      <div class="form-group">
+        <label>Topic</label>
+        <input type="text" id="pub-topic" placeholder="test/hello">
+      </div>
+      <div class="form-group">
+        <label>Payload</label>
+        <textarea id="pub-payload" placeholder='{"on": true, "bri": 128}'></textarea>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <select id="pub-qos" style="width:80px">
+          <option value="0">QoS 0</option>
+          <option value="1">QoS 1</option>
+          <option value="2">QoS 2</option>
+        </select>
+        <div class="checkbox-row">
+          <input type="checkbox" id="pub-retain"> <span>Retain</span>
+        </div>
+        <button class="btn btn-sm btn-success" onclick="doPublish()">Publish</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Message Feed -->
+  <div class="card">
+    <div class="card-header">Live Messages <span style="font-size:9px;color:var(--text-secondary);margin-left:8px" id="msg-count">0 messages</span></div>
+    <div style="display:flex;gap:8px;margin-bottom:8px">
+      <button class="btn btn-sm" onclick="clearFeed()">Clear</button>
+      <div class="checkbox-row">
+        <input type="checkbox" id="auto-scroll" checked> <span>Auto-scroll</span>
+      </div>
+    </div>
+    <div class="message-log" id="msg-feed">
+      <div class="msg"><span class="msg-system">Waiting for connection...</span></div>
+    </div>
+  </div>
+</main>
+
+<script src="js/paho-mqtt-min.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

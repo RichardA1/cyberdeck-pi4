@@ -1,0 +1,10 @@
+[Unit]
+Description=CyberDeck status collector timer
+
+[Timer]
+OnBootSec=5
+OnUnitActiveSec=10
+AccuracySec=2
+
+[Install]
+WantedBy=timers.target

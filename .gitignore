@@ -1,0 +1,18 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Build artifacts
+*.tar.gz
+node_modules/
+
+# Runtime files (generated on Pi, not in repo)
+status.json
+clients.json

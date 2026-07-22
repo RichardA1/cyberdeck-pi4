@@ -1,0 +1,7 @@
+[Unit]
+Description=CyberDeck status collector
+After=cyberdeck.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/collect-status.sh
